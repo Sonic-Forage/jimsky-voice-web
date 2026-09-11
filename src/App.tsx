@@ -17,6 +17,9 @@ import {
   type MediaItem, type SessionConfig,
 } from './lib/config'
 import Studio from './Studio'
+import Orb from './Orb'
+import Config from './Config'
+import FloatingChat from './FloatingChat'
 
 /* ------------------------------------------------------------------ helpers */
 
@@ -86,11 +89,12 @@ function ConnectScreen({ onConnect, error }: { onConnect: (room: string) => void
 
 /* ------------------------------------------------------------------ media stage */
 
-function MediaStage({ items, state, audioTrack, onClear }: {
+function MediaStage({ items, state, audioTrack, onClear, accent }: {
   items: MediaItem[]
   state: string
   audioTrack: TrackReference | undefined
   onClear: () => void
+  accent: string
 }) {
   const urls = useMemo(
     () => items.map((m) => ({
@@ -126,7 +130,7 @@ function MediaStage({ items, state, audioTrack, onClear }: {
         </div>
       ) : (
         <div className="idle">
-          <div className="orb" data-state={state} />
+          <Orb state={String(state)} accent={accent} size={190} />
           <p className="idle-text">
             {state === 'speaking' ? 'JIMSKY IS SPEAKING'
               : state === 'thinking' ? 'JIMSKY IS THINKING'
@@ -172,7 +176,7 @@ const IDLE_WARN_SEC = 60
 
 /* ------------------------------------------------------------------ in-room shell */
 
-function RoomShell({ onLeave }: { onLeave: () => void }) {
+function RoomShell({ onLeave, accent }: { onLeave: () => void; accent: string }) {
   const room = useRoomContext()
   const connState = useConnectionState()
   const { state, audioTrack } = useVoiceAssistant()
@@ -301,7 +305,7 @@ function RoomShell({ onLeave }: { onLeave: () => void }) {
       </header>
 
       <main className="body">
-        <MediaStage items={media} state={String(state)} audioTrack={audioTrack} onClear={() => setMedia([])} />
+        <MediaStage items={media} state={String(state)} audioTrack={audioTrack} onClear={() => setMedia([])} accent={accent} />
 
         <aside className="side">
           <div className="panel">
@@ -357,7 +361,15 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   // STUDIO works with no voice session at all - "stop the bot and just make art" - and the voice
   // room stays mounted when you switch, so you can talk while you build.
-  const [view, setView] = useState<'voice' | 'studio'>('voice')
+  const [view, setView] = useState<'voice' | 'studio' | 'config'>('voice')
+  const [accent, setAccent] = useState(() => localStorage.getItem('jimsky.accent') ?? 'teal')
+  const [chatOpen, setChatOpen] = useState(false)
+
+  // Accent lives in a data attribute so the whole HUD recolours from one place.
+  useEffect(() => {
+    document.documentElement.dataset.accent = accent
+    localStorage.setItem('jimsky.accent', accent)
+  }, [accent])
 
   const connect = async (room: string) => {
     setError(null)
@@ -378,7 +390,13 @@ export default function App() {
         <button className={view === 'studio' ? 'on' : ''} onClick={() => setView('studio')}>
           STUDIO
         </button>
+        <button className={view === 'config' ? 'on' : ''} onClick={() => setView('config')}>
+          CONFIG
+        </button>
         <span className="spacer" />
+        <button className="tabghost" onClick={() => setChatOpen((v) => !v)} title="chat with the agent">
+          {chatOpen ? 'HIDE CHAT' : 'CHAT'}
+        </button>
         {session && (
           <button className="taborange" onClick={() => setSession(null)}>STOP BOT</button>
         )}
@@ -397,13 +415,15 @@ export default function App() {
             data-lk-theme="default"
             style={{ height: '100%' }}
           >
-            <RoomShell onLeave={() => setSession(null)} />
+            <RoomShell onLeave={() => setSession(null)} accent={accent} />
           </LiveKitRoom>
         </div>
       )}
 
       {view === 'studio' && <div className="view"><Studio /></div>}
+      {view === 'config' && <div className="view"><Config accent={accent} onAccent={setAccent} /></div>}
       {view === 'voice' && !session && <div className="view"><ConnectScreen onConnect={connect} error={error} /></div>}
+      <FloatingChat open={chatOpen} onToggle={() => setChatOpen((v) => !v)} />
     </div>
   )
 }

@@ -130,6 +130,44 @@ export const sendChat = (message: string) =>
 export const clearChat = () =>
   call<{ messages: ChatMessage[] }>('/api/chat/clear', { method: 'POST', body: '{}' })
 
+export interface HudSettings {
+  comfy_endpoint: string
+  comfy_endpoint_label?: string
+  livekit_url: string
+  media_base: string
+  default_model: string
+  default_batch: number
+  new_stack_only: boolean
+  auto_publish: boolean
+  chat_dock: 'float' | 'column'
+  accent: 'teal' | 'magenta' | 'amber'
+  panels: Record<string, boolean>
+}
+
+export interface ComfyPreset { id: string; label: string; url: string; note: string }
+export interface ComfyProbe {
+  ok: boolean; url: string; detail?: string; comfyui_version?: string
+  device?: string; vram_total_gb?: number; vram_free_gb?: number; nodes?: number | null
+}
+export interface HudTemplate {
+  name: string; title: string; category: string; group: string; media: string
+  description: string; tags: string[]; models: string[]; tutorial: string; date: string
+  json_url: string
+}
+
+export const fetchSettings = () => call<{ settings: HudSettings }>('/api/settings')
+export const saveSettings = (settings: Partial<HudSettings>) =>
+  call<{ settings: HudSettings }>('/api/settings', { method: 'POST', body: JSON.stringify({ settings }) })
+export const fetchComfyPresets = () =>
+  call<{ presets: ComfyPreset[]; current: string }>('/api/comfy/presets')
+export const testComfy = (url: string) =>
+  call<ComfyProbe>('/api/comfy/test', { method: 'POST', body: JSON.stringify({ url }) })
+export const fetchTemplates = (q = '', limit = 300) =>
+  call<{ templates: HudTemplate[]; count: number; categories: string[]; shown: number }>(
+    `/api/templates?q=${encodeURIComponent(q)}&limit=${limit}`)
+export const fetchTemplateJson = (name: string) =>
+  call<{ name: string; workflow: unknown }>(`/api/templates/json?name=${encodeURIComponent(name)}`)
+
 export const fetchMods = () => call<{ mods: HudMod[] }>('/api/mods')
 export const fetchWorkflows = () => call<{ workflows: HudWorkflow[] }>('/api/workflows')
 export const saveWorkflow = (workflow: Partial<HudWorkflow>) =>

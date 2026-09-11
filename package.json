@@ -2,7 +2,7 @@
   "name": "jimsky-voice-web",
   "version": "1.0.0",
   "private": true,
-  "description": "JIMSKY \u2014 realtime voice front end for Hermes over LiveKit",
+  "description": "JIMSKY — realtime voice front end for Hermes over LiveKit",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,10 +13,12 @@
   "dependencies": {
     "@livekit/components-react": "^2.9.24",
     "@livekit/components-styles": "^1.2.0",
+    "@types/three": "^0.186.0",
     "livekit-client": "^2.15.0",
     "livekit-server-sdk": "^2.13.0",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "three": "^0.186.0"
   },
   "devDependencies": {
     "@types/react": "^19.1.0",
