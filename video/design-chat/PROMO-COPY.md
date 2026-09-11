@@ -10,7 +10,7 @@ as such in the video itself.
 
 ---
 
-## 1. Short post (X / Bluesky / Threads) — 243 chars body, 290 with tags
+## 1. Short post (X / Bluesky / Threads) — 243 chars body, 272 with tags (limit 280)
 
 gave ten ai voices separate personalities and told them to review a design for a minute.
 
@@ -18,7 +18,7 @@ they argued about a bus, someone counted lens flares, and one said "cathedral of
 
 72s · all ten speak · laughs in. 1080p, rendered on my own box.
 
-`#ai #voiceai #generativeart #gamedev #indiedev`
+`#ai #voiceai #generativeart`
 
 ## 2. Alternative hooks
 
