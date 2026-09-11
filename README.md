@@ -22,6 +22,13 @@ Two things arrive on screen:
 2. **Media pushed over the LiveKit data channel** on topic `jimsky.media` — base64 payloads
    with `{kind, mime, data, caption}`. Used by agents that want to push directly.
 
+## Image making and editing
+
+The flare image stack (text-to-image and image-edit via `OpenAIGPTImageNodeV2`) is documented in
+[IMAGE-STACK.md](IMAGE-STACK.md), with `flair-image.py` as the helper. Note the split: the paid
+node can only be submitted through the OAuth-backed MCP session, so the helper builds and prints
+the payload while the MCP client submits it.
+
 ## Layout
 
     src/App.tsx              connect gate, room HUD, media stage, transcript, control log
@@ -29,6 +36,25 @@ Two things arrive on screen:
     src/styles.css           the cyberpunk HUD theme
     netlify/functions/token.ts   mints short-lived room-scoped LiveKit JWTs
     netlify.toml             build, /api/* rewrite, SPA fallback, headers
+    IMAGE-STACK.md           the gpt-image-2.5-flare recipe (text-to-image + edit)
+    flair-image.py           build/upload/fetch/publish helpers for that recipe
+    qa_frontend.py           real-browser check: joins, agent dispatches, media renders
+    qa_idle.py               proves the client-side idle hangup
+    qa_agent_idle.py         proves the agent hangs up on silence with the client still connected
+
+## Idle failsafe
+
+Nothing should stay live while nobody is talking. Three layers, all verified:
+
+1. **The agent hangs up on silence** (`VEX_IDLE_TIMEOUT_SEC`, default 300s) and when the room
+   empties (`VEX_EMPTY_ROOM_GRACE_SEC`, 30s), with `VEX_MAX_SESSION_SEC` as an absolute cap.
+2. **The client hangs up too** and shows a countdown (`IDLE · HANGUP IN Ns`) inside the last
+   minute, so a forgotten tab cannot hold a session open. Override with `?idle=<seconds>`.
+3. **The SDK closes the session when your tab dies** (`close_on_disconnect`), so a crash or a
+   closed browser never leaves a billing session behind.
+
+The agent also disconnects the room explicitly when it ends. Relying on job teardown alone left a
+ghost publisher sitting in the room, and LiveKit then refused to dispatch a new agent into it.
 
 ## Why the token lives server-side
 

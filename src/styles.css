@@ -121,3 +121,6 @@ h1,h2,h3{margin:0;letter-spacing:.14em}
 .typebox input{flex:1;background:#090c12;border:1px solid var(--line);color:var(--ink);padding:9px 12px;font:12px var(--mono)}
 .typebox input:focus{outline:none;border-color:var(--accent)}
 .hint{color:var(--dimmer);font-size:10px;letter-spacing:.1em}
+
+.idle-warn{border-color:var(--warn);color:var(--warn);animation:blip 1s steps(2,end) infinite}
+@keyframes blip{50%{opacity:.45}}

@@ -11,6 +11,7 @@ import {
   useVoiceAssistant,
 } from '@livekit/components-react'
 import { ConnectionState, type Room } from 'livekit-client'
+import type { TrackReference } from '@livekit/components-react'
 import {
   MEDIA_TOPIC, TEXT_TOPIC, fetchPublishedMedia, fetchSession,
   type MediaItem, type SessionConfig,
@@ -87,7 +88,7 @@ function ConnectScreen({ onConnect, error }: { onConnect: (room: string) => void
 function MediaStage({ items, state, audioTrack, onClear }: {
   items: MediaItem[]
   state: string
-  audioTrack: MediaStreamTrack | undefined
+  audioTrack: TrackReference | undefined
   onClear: () => void
 }) {
   const urls = useMemo(
@@ -149,11 +150,24 @@ function MediaStage({ items, state, audioTrack, onClear }: {
       )}
 
       <div className="viz">
-        <BarVisualizer state={state as never} track={audioTrack} barCount={32} barSize={4} minHeight={6} />
+        <BarVisualizer state={state as never} track={audioTrack} barCount={32}
+          options={{ minHeight: 10, maxHeight: 100 }} />
       </div>
     </section>
   )
 }
+
+/* ------------------------------------------------------------------ idle failsafe */
+
+// A forgotten tab must not hold a live session open - that is a billable realtime session and a
+// worker process held for nobody. The agent enforces the same rule server-side; this half gives
+// the human a visible countdown instead of a silent cut. `?idle=45` overrides for testing.
+const IDLE_LIMIT_SEC = (() => {
+  const q = new URLSearchParams(window.location.search).get('idle')
+  const n = Number(q ?? import.meta.env.VITE_IDLE_TIMEOUT_SEC ?? 300)
+  return Number.isFinite(n) && n > 5 ? n : 300
+})()
+const IDLE_WARN_SEC = 60
 
 /* ------------------------------------------------------------------ in-room shell */
 
@@ -162,17 +176,38 @@ function RoomShell({ onLeave }: { onLeave: () => void }) {
   const connState = useConnectionState()
   const { state, audioTrack } = useVoiceAssistant()
   const { localParticipant } = useLocalParticipant()
-  const { microphoneTrack, isMicrophoneEnabled } = localParticipant
+  const { isMicrophoneEnabled } = localParticipant
   const segments = useTranscriptions()
 
   const [media, setMedia] = useState<MediaItem[]>([])
   const [log, setLog] = useState<string[]>([])
   const [typed, setTyped] = useState('')
+  const [idleLeft, setIdleLeft] = useState<number | null>(null)
   const logRef = useRef<HTMLDivElement>(null)
+  const lastActivity = useRef(Date.now())
+
+  // Any sign of life resets the clock: speech, typing, a mute toggle, media arriving.
+  const bump = useCallback(() => { lastActivity.current = Date.now() }, [])
+
+  useEffect(() => { if (segments.length) bump() }, [segments.length, bump])
 
   const note = useCallback((line: string) => {
     setLog((l) => [...l.slice(-80), `${stamp(Date.now())}  ${line}`])
   }, [])
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      const idle = (Date.now() - lastActivity.current) / 1000
+      const left = IDLE_LIMIT_SEC - idle
+      setIdleLeft(left <= IDLE_WARN_SEC ? Math.max(0, Math.round(left)) : null)
+      if (left <= 0) {
+        note(`idle for ${Math.round(idle)}s - hanging up to stop the meter`)
+        onLeave()
+      }
+    }, 1000)
+    return () => clearInterval(t)
+  }, [note, onLeave])
+
 
   // Media pushed by the agent arrives on the data channel, not as a file to fetch.
   useDataChannel(MEDIA_TOPIC, (msg) => {
@@ -188,6 +223,7 @@ function RoomShell({ onLeave }: { onLeave: () => void }) {
       }
       setMedia((m) => [item, ...m].slice(0, 40))
       note(`← ${kind} received (${(parsed.data.length / 1365).toFixed(0)} KB)`)
+      bump()
     } catch (e) {
       note(`media decode failed: ${(e as Error).message}`)
     }
@@ -203,7 +239,7 @@ function RoomShell({ onLeave }: { onLeave: () => void }) {
         const found = await fetchPublishedMedia()
         if (stop) return
         if (found.length !== lastCount) {
-          if (lastCount >= 0 && found.length > lastCount) note(`← ${found.length - lastCount} new item(s) published`)
+          if (lastCount >= 0 && found.length > lastCount) { note(`← ${found.length - lastCount} new item(s) published`); bump() }
           lastCount = found.length
         }
         setMedia((current) => {
@@ -222,7 +258,7 @@ function RoomShell({ onLeave }: { onLeave: () => void }) {
   useEffect(() => { logRef.current?.scrollTo({ top: 1e9 }) }, [log])
   useEffect(() => {
     note(`connected to ${room.name} as ${localParticipant.identity}`)
-    const onPart = (p: { identity: string }) => note(`participant joined: ${p.identity}`)
+    const onPart = (p: { identity: string }) => { note(`participant joined: ${p.identity}`); bump() }
     const onLeft = (p: { identity: string }) => note(`participant left: ${p.identity}`)
     room.on('participantConnected', onPart)
     room.on('participantDisconnected', onLeft)
@@ -231,6 +267,7 @@ function RoomShell({ onLeave }: { onLeave: () => void }) {
 
   const toggleMic = async () => {
     try {
+      bump()
       await localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled)
       note(`mic ${!isMicrophoneEnabled ? 'live' : 'muted'}`)
     } catch (e) { note(`mic toggle failed: ${(e as Error).message}`) }
@@ -240,6 +277,7 @@ function RoomShell({ onLeave }: { onLeave: () => void }) {
     const value = typed.trim()
     if (!value) return
     setTyped('')
+    bump()
     try {
       await room.localParticipant.sendText(value, { topic: TEXT_TOPIC })
       note(`→ text sent: ${value.slice(0, 48)}`)
@@ -255,13 +293,14 @@ function RoomShell({ onLeave }: { onLeave: () => void }) {
         <span className="room">ROOM {room.name}</span>
         <span className={`chip state-${state}`}>{String(state).toUpperCase()}</span>
         <span className={`chip conn conn-${connState}`}>{connState.toUpperCase()}</span>
+        {idleLeft !== null && <span className="chip idle-warn">IDLE · HANGUP IN {idleLeft}s</span>}
         <span className="spacer" />
         <span className="peers">{agents} REMOTE · {room.numParticipants} IN ROOM</span>
         <button className="mini danger" onClick={onLeave}>DISCONNECT</button>
       </header>
 
       <main className="body">
-        <MediaStage items={media} state={String(state)} audioTrack={audioTrack ?? undefined} onClear={() => setMedia([])} />
+        <MediaStage items={media} state={String(state)} audioTrack={audioTrack} onClear={() => setMedia([])} />
 
         <aside className="side">
           <div className="panel">
@@ -299,7 +338,10 @@ function RoomShell({ onLeave }: { onLeave: () => void }) {
           />
           <button className="mini" onClick={() => void sendText()}>SEND</button>
         </div>
-        <span className="hint">tracks: {microphoneTrack ? 'mic' : 'none'} · media channel: {MEDIA_TOPIC}</span>
+        <span className="hint">
+          tracks: {isMicrophoneEnabled ? 'mic' : 'muted'} · media channel: {MEDIA_TOPIC} ·
+          auto-hangup after {Math.round(IDLE_LIMIT_SEC / 60)} min idle
+        </span>
       </footer>
 
       <RoomAudioRenderer />
