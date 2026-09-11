@@ -1,0 +1,123 @@
+/* JIMSKY — VOICE LINK
+   Cyberpunk terminal HUD: monospace readouts, hard panel edges, neon accents, scanline film.
+   Built to look like mission control for a runaway AI worker, because that is what he is. */
+
+:root{
+  --bg:#06070a; --panel:#0d1017; --panel2:#121826; --line:#1f2735; --line-hot:#33415a;
+  --ink:#e9eef8; --dim:#8b98b0; --dimmer:#5a677e;
+  --accent:#4be3c8; --accent2:#ff5d8f; --warn:#ffc857; --live:#7ee081;
+  --mono:ui-monospace,"SFMono-Regular","JetBrains Mono","Fira Code",Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{
+  margin:0; color:var(--ink); font:14px/1.55 var(--mono); overflow:hidden;
+  background:
+    radial-gradient(1100px 700px at 76% -10%, rgba(75,227,200,.10), transparent 60%),
+    radial-gradient(900px 620px at 6% 110%, rgba(255,93,143,.09), transparent 60%),
+    var(--bg);
+}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:60;opacity:.05;
+  background:repeating-linear-gradient(180deg,#fff 0 1px,transparent 1px 3px)}
+h1,h2,h3{margin:0;letter-spacing:.14em}
+.mono{font-variant-ligatures:none}
+.muted{color:var(--dimmer);font-size:12px}
+.tiny{color:var(--dimmer);font-size:11px;max-width:56ch;line-height:1.6}
+.spacer{flex:1}
+.tag{color:var(--accent);letter-spacing:.26em;font-size:10px}
+.mini{border:1px solid var(--line-hot);background:#0b0e15;color:var(--dim);padding:6px 10px;
+  font:10.5px/1 var(--mono);letter-spacing:.14em;cursor:pointer;transition:.15s}
+.mini:hover{color:var(--ink);border-color:var(--accent)}
+.mini.danger{border-color:var(--accent2);color:var(--accent2)}
+.mini.danger:hover{background:rgba(255,93,143,.12)}
+
+/* ---------- connect gate ---------- */
+.gate{height:100%;display:grid;place-items:center;padding:24px}
+.gate-inner{width:min(760px,100%);border:1px solid var(--line);background:linear-gradient(180deg,var(--panel2),var(--panel));
+  padding:34px 34px 26px;box-shadow:0 30px 80px rgba(0,0,0,.6);position:relative}
+.gate-inner::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,transparent 0 49%,rgba(75,227,200,.05) 50%,transparent 51%)}
+.mark{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.mark .glyph{color:var(--accent);font-size:34px;text-shadow:0 0 24px rgba(75,227,200,.5)}
+.mark h1{font-size:42px;letter-spacing:.2em}
+.sub{color:var(--dim);font-size:10.5px;letter-spacing:.3em;margin:0}
+.sub b{color:var(--accent)}
+.pitch{color:var(--dim);font-size:12.5px;line-height:1.75;margin:18px 0 22px;max-width:62ch}
+.gate-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gate-row label{font-size:10px;letter-spacing:.24em;color:var(--dimmer)}
+.gate-row input{background:#090c12;border:1px solid var(--line);color:var(--ink);padding:10px 12px;
+  font:12px var(--mono);min-width:200px}
+.gate-row input:focus{outline:none;border-color:var(--accent)}
+.cta{border:1px solid var(--accent);background:rgba(75,227,200,.10);color:var(--accent);
+  padding:11px 18px;font:12px/1 var(--mono);letter-spacing:.2em;cursor:pointer;transition:.15s}
+.cta:hover{background:var(--accent);color:#04120f}
+.cta:disabled{opacity:.5;cursor:progress}
+.err{color:var(--accent2);font-size:12px;margin:14px 0 0}
+
+/* ---------- shell ---------- */
+.shell{height:100%;display:flex;flex-direction:column}
+.hud{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(18,24,38,.94),rgba(6,7,10,.6));backdrop-filter:blur(6px)}
+.hud .glyph{color:var(--accent);font-size:22px}
+.hud h1{font-size:18px}
+.room{color:var(--dimmer);font-size:10px;letter-spacing:.2em}
+.chip{font-size:9.5px;letter-spacing:.18em;padding:4px 8px;border:1px solid var(--line-hot);color:var(--dim)}
+.state-listening{border-color:var(--live);color:var(--live)}
+.state-thinking{border-color:var(--warn);color:var(--warn)}
+.state-speaking{border-color:var(--accent);color:var(--accent)}
+.conn-connected{border-color:var(--live);color:var(--live)}
+.peers{color:var(--dimmer);font-size:10px;letter-spacing:.14em}
+
+.body{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(330px,30%);gap:14px;padding:14px;min-height:0}
+@media (max-width:1000px){.body{grid-template-columns:1fr;grid-template-rows:1fr auto}}
+
+/* ---------- stage ---------- */
+.stage{border:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0}
+.stage-head{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.count{color:var(--dimmer);font-size:10px;letter-spacing:.2em}
+.hero{flex:1;display:flex;flex-direction:column;min-height:0;background:#04050a}
+.hero img,.hero video{flex:1;min-height:0;width:100%;object-fit:contain}
+.hero audio{width:100%;margin:auto 0}
+.hero-cap{display:flex;gap:10px;align-items:center;padding:8px 12px;border-top:1px solid var(--line);font-size:11px}
+.hero-cap .kind{color:var(--accent);letter-spacing:.2em;font-size:9.5px}
+.hero-cap .cap{color:var(--dim);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hero-cap .ts{color:var(--dimmer);font-size:10px}
+.idle{flex:1;display:grid;place-content:center;justify-items:center;gap:14px;padding:30px;text-align:center}
+.orb{width:150px;height:150px;border-radius:50%;border:1px solid var(--line-hot);
+  background:radial-gradient(circle at 50% 45%,rgba(75,227,200,.22),transparent 62%);transition:.4s}
+.orb[data-state="speaking"]{background:radial-gradient(circle at 50% 45%,rgba(75,227,200,.5),transparent 66%);
+  box-shadow:0 0 60px rgba(75,227,200,.35);transform:scale(1.06)}
+.orb[data-state="thinking"]{background:radial-gradient(circle at 50% 45%,rgba(255,200,87,.42),transparent 66%);
+  box-shadow:0 0 50px rgba(255,200,87,.28)}
+.orb[data-state="listening"]{background:radial-gradient(circle at 50% 45%,rgba(126,224,129,.3),transparent 64%)}
+.idle-text{color:var(--ink);letter-spacing:.24em;font-size:12px;margin:0}
+.idle-sub{color:var(--dimmer);font-size:11px;margin:0}
+.thumbs{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line);overflow-x:auto}
+.thumb{position:relative;width:96px;height:96px;flex:0 0 auto;border:1px solid var(--line);background:#04050a}
+.thumb img,.thumb video{width:100%;height:100%;object-fit:cover}
+.thumb .aud{display:grid;place-items:center;height:100%;color:var(--accent);font-size:22px}
+.thumb .t{position:absolute;bottom:3px;left:4px;font-size:8.5px;letter-spacing:.16em;color:var(--accent);
+  background:rgba(4,5,10,.75);padding:1px 4px}
+.viz{height:64px;border-top:1px solid var(--line);padding:8px 12px;background:#080a10}
+
+/* ---------- side panels ---------- */
+.side{display:flex;flex-direction:column;gap:14px;min-height:0}
+.panel{border:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0;flex:1}
+.panel-head{padding:9px 12px;border-bottom:1px solid var(--line)}
+.scroller{overflow-y:auto;padding:10px 12px;flex:1;min-height:120px}
+.seg{margin:0 0 9px;font-size:12px;line-height:1.6;color:var(--dim)}
+.seg .who{display:block;font-size:9px;letter-spacing:.18em;color:var(--dimmer);margin-bottom:2px}
+.seg.me .who{color:var(--live)}
+.seg.them .who{color:var(--accent)}
+.logline{margin:0 0 3px;font-size:10.5px;color:var(--dimmer);white-space:pre-wrap;word-break:break-word}
+
+/* ---------- controls ---------- */
+.controls{display:flex;align-items:center;gap:12px;padding:11px 16px;border-top:1px solid var(--line);
+  background:linear-gradient(0deg,rgba(18,24,38,.94),rgba(6,7,10,.5));flex-wrap:wrap}
+.pill{border:1px solid var(--line-hot);background:#0b0e15;color:var(--dim);padding:9px 14px;
+  font:11px/1 var(--mono);letter-spacing:.16em;cursor:pointer;transition:.15s}
+.pill.on{border-color:var(--live);color:var(--live);box-shadow:0 0 18px rgba(126,224,129,.16)}
+.typebox{display:flex;gap:8px;flex:1;min-width:240px}
+.typebox input{flex:1;background:#090c12;border:1px solid var(--line);color:var(--ink);padding:9px 12px;font:12px var(--mono)}
+.typebox input:focus{outline:none;border-color:var(--accent)}
+.hint{color:var(--dimmer);font-size:10px;letter-spacing:.1em}
