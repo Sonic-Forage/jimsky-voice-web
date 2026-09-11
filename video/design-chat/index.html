@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #06070a; }
+      body { font-family: Menlo, Consolas, "DejaVu Sans Mono", monospace; }
+      #root { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #06070a; }
+      .room { position: absolute; inset: 0;
+        background:
+          radial-gradient(1200px 700px at 76% 18%, rgba(75,227,200,0.10), transparent 62%),
+          radial-gradient(900px 600px at 10% 92%, rgba(255,93,143,0.09), transparent 60%),
+          #06070a; }
+      .grid { position: absolute; inset: 0; opacity: .16;
+        background-image: linear-gradient(#1f2735 1px, transparent 1px), linear-gradient(90deg, #1f2735 1px, transparent 1px);
+        background-size: 120px 120px; }
+      .scan { position: absolute; inset: 0; opacity: .05; pointer-events: none;
+        background: repeating-linear-gradient(180deg, #fff 0 1px, transparent 1px 3px); }
+      .design { position: absolute; left: 985px; top: 132px; width: 800px; height: 800px;
+        border: 1px solid #33415a; background: #04050a; overflow: hidden;
+        box-shadow: 0 40px 120px rgba(0,0,0,.75); }
+      .design img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .design-tag { position: absolute; left: 985px; top: 92px; font-size: 15px; letter-spacing: .34em; color: #4be3c8; }
+      .title { position: absolute; left: 96px; top: 150px; }
+      .title h1 { font-size: 104px; letter-spacing: .14em; color: #e9eef8; font-weight: 600; }
+      .title p { margin-top: 18px; font-size: 19px; letter-spacing: .34em; color: #4be3c8; }
+      .title .sub { margin-top: 12px; font-size: 16px; letter-spacing: .18em; color: #7c8aa3; }
+      .rail { position: absolute; left: 96px; top: 452px; display: flex; flex-wrap: wrap; width: 830px; gap: 10px; }
+      .chip { display: flex; align-items: baseline; gap: 8px; padding: 9px 14px;
+        border: 1px solid #1f2735; background: #0b0e15; color: #8b98b0; font-size: 17px; letter-spacing: .16em; }
+      .chip-name { font-weight: 600; }
+      .chip-role { font-size: 12px; letter-spacing: .1em; opacity: .82; }
+      .chip.laugh { border-style: dashed; }
+      .caption { position: absolute; left: 96px; bottom: 74px; width: 1730px; }
+      .cap-inner { border-left: 3px solid #4be3c8; padding: 4px 0 4px 22px; }
+      .cap-who { display: flex; align-items: center; gap: 10px; font-size: 16px; letter-spacing: .3em;
+        color: #4be3c8; margin-bottom: 10px; }
+      .chip-dot { width: 9px; height: 9px; border-radius: 50%; background: #4be3c8; display: inline-block; }
+      .cap-role { color: #7c8aa3; letter-spacing: .18em; font-size: 12px; }
+      .cap-text { font-size: 39px; line-height: 1.32; color: #e9eef8; max-width: 1600px; }
+      .end { position: absolute; inset: 0; }
+      .end-inner { position: absolute; left: 96px; top: 300px; }
+      .end h2 { font-size: 88px; letter-spacing: .16em; color: #4be3c8; }
+      .end p { margin-top: 20px; font-size: 20px; letter-spacing: .22em; color: #8b98b0; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-root="true"
+         data-width="1920" data-height="1080" data-duration="72.29">
+      <div class="room"></div>
+      <div class="grid"></div>
+
+      <div class="clip" id="design-wrap" data-start="0" data-duration="72.29">
+        <div class="design-tag">UNDER REVIEW · gpt-image-2.5-flare · 1024×1024</div>
+        <div class="design"><div id="design-inner" style="width:100%;height:100%">
+          <img src="assets/design.png" alt="the rooftop design under discussion" />
+        </div></div>
+      </div>
+
+      <div class="clip" id="title-card" data-start="0" data-duration="5.2">
+        <div class="title">
+          <h1>DESIGN CHAT</h1>
+          <p>TEN VOICES · ONE DESIGN</p>
+          <div class="sub">the rooftop piece, argued about out loud</div>
+        </div>
+      </div>
+
+      <div class="rail" id="rail">
+        <div class="chip" id="chip-0">
+          <span class="chip-name">MARINA</span><span class="chip-role">marin</span>
+        </div>
+        <div class="chip" id="chip-1">
+          <span class="chip-name">CEDAR</span><span class="chip-role">cedar</span>
+        </div>
+        <div class="chip" id="chip-2">
+          <span class="chip-name">ALLOY</span><span class="chip-role">alloy</span>
+        </div>
+        <div class="chip" id="chip-3">
+          <span class="chip-name">BALLAD</span><span class="chip-role">ballad</span>
+        </div>
+        <div class="chip" id="chip-4">
+          <span class="chip-name">CORAL</span><span class="chip-role">coral</span>
+        </div>
+        <div class="chip laugh" id="chip-5">
+          <span class="chip-name">ASH</span><span class="chip-role">ash</span>
+        </div>
+        <div class="chip" id="chip-6">
+          <span class="chip-name">ECHO</span><span class="chip-role">echo</span>
+        </div>
+        <div class="chip laugh" id="chip-7">
+          <span class="chip-name">SAGE</span><span class="chip-role">sage</span>
+        </div>
+        <div class="chip laugh" id="chip-8">
+          <span class="chip-name">SHIMMER</span><span class="chip-role">shimmer</span>
+        </div>
+        <div class="chip" id="chip-9">
+          <span class="chip-name">VERSE</span><span class="chip-role">verse</span>
+        </div>
+      </div>
+
+      <div class="clip caption" id="cap-0" data-start="0.0" data-duration="4.92">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>MARINA<span class="cap-role">host</span></div>
+          <div class="cap-text">All right, everyone's here. Look at the rooftop piece. What do we think?</div>
+        </div>
+      </div>
+      <div class="clip caption" id="cap-1" data-start="5.27" data-duration="4.8">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>CEDAR<span class="cap-role">engineer</span></div>
+          <div class="cap-text">Structurally it's fine. Emotionally, he looks like he's waiting for a bus in the rain.</div>
+        </div>
+      </div>
+      <div class="clip caption" id="cap-2" data-start="10.37" data-duration="3.82">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>ECHO<span class="cap-role">observer</span></div>
+          <div class="cap-text">I'll note the figure occupies eleven percent of the frame.</div>
+        </div>
+      </div>
+      <div class="clip caption" id="cap-3" data-start="14.44" data-duration="5.35">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>SHIMMER<span class="cap-role">spark</span></div>
+          <div class="cap-text">Haha, eleven percent? He's the whole mood, you absolute robot.</div>
+        </div>
+      </div>
+      <div class="clip caption" id="cap-4" data-start="20.04" data-duration="4.42">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>VERSE<span class="cap-role">poet</span></div>
+          <div class="cap-text">The rain doesn't touch him. That's the line that matters.</div>
+        </div>
+      </div>
+      <div class="clip caption" id="cap-5" data-start="24.9" data-duration="4.92">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>BALLAD<span class="cap-role">performer</span></div>
+          <div class="cap-text">It needs a spotlight. Everything needs a spotlight.</div>
+        </div>
+      </div>
+      <div class="clip caption" id="cap-6" data-start="30.12" data-duration="6.96">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>CORAL<span class="cap-role">assistant</span></div>
+          <div class="cap-text">Sorry, sorry. Cedar's bus thing is all I can hear now. That's it, that's the piece.</div>
+        </div>
+      </div>
+      <div class="clip caption" id="cap-7" data-start="37.38" data-duration="5.21">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>ASH<span class="cap-role">narrator</span></div>
+          <div class="cap-text">Ha. That's because he's right. Look at the shoulders.</div>
+        </div>
+      </div>
+      <div class="clip caption" id="cap-8" data-start="43.04" data-duration="2.11">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>MARINA<span class="cap-role">host</span></div>
+          <div class="cap-text">Okay, but do we ship it?</div>
+        </div>
+      </div>
+      <div class="clip caption" id="cap-9" data-start="45.45" data-duration="3.22">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>SHIMMER<span class="cap-role">spark</span></div>
+          <div class="cap-text">Ship it before somebody adds a lens flare.</div>
+        </div>
+      </div>
+      <div class="clip caption" id="cap-10" data-start="48.87" data-duration="5.76">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>SAGE<span class="cap-role">teacher</span></div>
+          <div class="cap-text">Hah. That is the most Verse thing anyone has ever said.</div>
+        </div>
+      </div>
+      <div class="clip caption" id="cap-11" data-start="54.98" data-duration="3.12">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>ALLOY<span class="cap-role">operator</span></div>
+          <div class="cap-text">Retaining it costs nothing. Retained.</div>
+        </div>
+      </div>
+      <div class="clip caption" id="cap-12" data-start="58.45" data-duration="4.32">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>MARINA<span class="cap-role">host</span></div>
+          <div class="cap-text">Good. Rooftop ships. Who's making the next one?</div>
+        </div>
+      </div>
+      <div class="clip caption" id="cap-13" data-start="63.02" data-duration="5.86">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>SHIMMER<span class="cap-role">spark</span></div>
+          <div class="cap-text">Me. Cathedral of teeth. I've said it, I stand by it.</div>
+        </div>
+      </div>
+      <div class="clip caption" id="cap-14" data-start="69.23" data-duration="3.61">
+        <div class="cap-inner">
+          <div class="cap-who"><span class="chip-dot"></span>ASH<span class="cap-role">narrator</span></div>
+          <div class="cap-text">Ha. And there it is.</div>
+        </div>
+      </div>
+
+      <div class="clip end" id="end-card" data-start="67.69" data-duration="4.6">
+        <div class="end-inner">
+          <h2>ROOFTOP SHIPS</h2>
+          <p>TEN VOICES · GENERATED ON OUR OWN HARDWARE</p>
+        </div>
+      </div>
+
+      <div class="scan"></div>
+
+      <audio id="chat-audio" src="design_chat_all10.mp3" data-start="0" data-duration="72.29" data-volume="1"></audio>
+      <div class="clip" id="audio-tail" data-start="72.24" data-duration="0.05"></div>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#title-card", { opacity: 0 }, { opacity: 1, duration: 0.6 }, 0);
+      tl.to("#title-card", { opacity: 0, duration: 0.55 }, 4.6);
+      tl.fromTo("#design-wrap", { opacity: 0 }, { opacity: 1, duration: 1.1 }, 0.1);
+      tl.fromTo("#design-inner", { scale: 1.04 }, { scale: 1, duration: 72.29, ease: "none" }, 0);
+      tl.fromTo("#rail", { opacity: 0 }, { opacity: 1, duration: 0.8 }, 0.5);
+
+      tl.set("#chip-0", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 0.0);
+      tl.set("#chip-0", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 5.22);
+      tl.set("#chip-1", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 5.27);
+      tl.set("#chip-1", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 10.37);
+      tl.set("#chip-6", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 10.37);
+      tl.set("#chip-6", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 14.49);
+      tl.set("#chip-8", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 14.44);
+      tl.set("#chip-8", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 20.09);
+      tl.set("#chip-9", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 20.04);
+      tl.set("#chip-9", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 24.76);
+      tl.set("#chip-3", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 24.9);
+      tl.set("#chip-3", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 30.12);
+      tl.set("#chip-4", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 30.12);
+      tl.set("#chip-4", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 37.38);
+      tl.set("#chip-5", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 37.38);
+      tl.set("#chip-5", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 42.89);
+      tl.set("#chip-0", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 43.04);
+      tl.set("#chip-0", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 45.45);
+      tl.set("#chip-8", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 45.45);
+      tl.set("#chip-8", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 48.97);
+      tl.set("#chip-7", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 48.87);
+      tl.set("#chip-7", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 54.93);
+      tl.set("#chip-2", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 54.98);
+      tl.set("#chip-2", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 58.4);
+      tl.set("#chip-0", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 58.45);
+      tl.set("#chip-0", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 63.07);
+      tl.set("#chip-8", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 63.02);
+      tl.set("#chip-8", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 69.18);
+      tl.set("#chip-5", { borderColor: "#4be3c8", color: "#e9eef8", backgroundColor: "rgba(75,227,200,0.10)" }, 69.23);
+      tl.set("#chip-5", { borderColor: "#1f2735", color: "#8b98b0", backgroundColor: "#0b0e15" }, 72.19);
+      tl.fromTo("#cap-0", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 0.0);
+      tl.fromTo("#cap-1", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 5.27);
+      tl.fromTo("#cap-2", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 10.37);
+      tl.fromTo("#cap-3", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 14.44);
+      tl.fromTo("#cap-4", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 20.04);
+      tl.fromTo("#cap-5", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 24.9);
+      tl.fromTo("#cap-6", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 30.12);
+      tl.fromTo("#cap-7", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 37.38);
+      tl.fromTo("#cap-8", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 43.04);
+      tl.fromTo("#cap-9", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 45.45);
+      tl.fromTo("#cap-10", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 48.87);
+      tl.fromTo("#cap-11", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 54.98);
+      tl.fromTo("#cap-12", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 58.45);
+      tl.fromTo("#cap-13", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 63.02);
+      tl.fromTo("#cap-14", { y: 22 }, { y: 0, duration: 0.3, ease: "power2.out" }, 69.23);
+      tl.fromTo("#cap-3 .cap-inner", { borderColor: "#ff5d8f" }, { borderColor: "#4be3c8", duration: 0.9 }, 14.44);
+      tl.fromTo("#cap-7 .cap-inner", { borderColor: "#ff5d8f" }, { borderColor: "#4be3c8", duration: 0.9 }, 37.38);
+      tl.fromTo("#cap-10 .cap-inner", { borderColor: "#ff5d8f" }, { borderColor: "#4be3c8", duration: 0.9 }, 48.87);
+      tl.fromTo("#cap-14 .cap-inner", { borderColor: "#ff5d8f" }, { borderColor: "#4be3c8", duration: 0.9 }, 69.23);
+      tl.fromTo("#end-card", { opacity: 0 }, { opacity: 1, duration: 0.7 }, 67.69);
+      tl.to("#chat-audio", { volume: 1, duration: 0.6 }, 0);
+      tl.to("#chat-audio", { volume: 0, duration: 1.4 }, 70.69);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
