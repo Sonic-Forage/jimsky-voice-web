@@ -16,6 +16,7 @@ import {
   MEDIA_TOPIC, TEXT_TOPIC, fetchPublishedMedia, fetchSession,
   type MediaItem, type SessionConfig,
 } from './lib/config'
+import Studio from './Studio'
 
 /* ------------------------------------------------------------------ helpers */
 
@@ -354,6 +355,9 @@ function RoomShell({ onLeave }: { onLeave: () => void }) {
 export default function App() {
   const [session, setSession] = useState<SessionConfig | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // STUDIO works with no voice session at all - "stop the bot and just make art" - and the voice
+  // room stays mounted when you switch, so you can talk while you build.
+  const [view, setView] = useState<'voice' | 'studio'>('voice')
 
   const connect = async (room: string) => {
     setError(null)
@@ -365,21 +369,41 @@ export default function App() {
     }
   }
 
-  if (!session) return <ConnectScreen onConnect={connect} error={error} />
-
   return (
-    <LiveKitRoom
-      token={session.token}
-      serverUrl={session.url}
-      connect
-      audio
-      video={false}
-      onDisconnected={() => setSession(null)}
-      onError={(e) => setError(e.message)}
-      data-lk-theme="default"
-      style={{ height: '100%' }}
-    >
-      <RoomShell onLeave={() => setSession(null)} />
-    </LiveKitRoom>
+    <div className="app">
+      <nav className="tabs">
+        <button className={view === 'voice' ? 'on' : ''} onClick={() => setView('voice')}>
+          VOICE
+        </button>
+        <button className={view === 'studio' ? 'on' : ''} onClick={() => setView('studio')}>
+          STUDIO
+        </button>
+        <span className="spacer" />
+        {session && (
+          <button className="taborange" onClick={() => setSession(null)}>STOP BOT</button>
+        )}
+      </nav>
+
+      {session && (
+        <div className="view" style={{ display: view === 'voice' ? 'flex' : 'none' }}>
+          <LiveKitRoom
+            token={session.token}
+            serverUrl={session.url}
+            connect
+            audio
+            video={false}
+            onDisconnected={() => setSession(null)}
+            onError={(e) => setError(e.message)}
+            data-lk-theme="default"
+            style={{ height: '100%' }}
+          >
+            <RoomShell onLeave={() => setSession(null)} />
+          </LiveKitRoom>
+        </div>
+      )}
+
+      {view === 'studio' && <div className="view"><Studio /></div>}
+      {view === 'voice' && !session && <div className="view"><ConnectScreen onConnect={connect} error={error} /></div>}
+    </div>
   )
 }
