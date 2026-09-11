@@ -19,6 +19,7 @@ import {
 import Studio from './Studio'
 import Orb from './Orb'
 import Config from './Config'
+import Models from './Models'
 import FloatingChat from './FloatingChat'
 
 /* ------------------------------------------------------------------ helpers */
@@ -361,7 +362,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   // STUDIO works with no voice session at all - "stop the bot and just make art" - and the voice
   // room stays mounted when you switch, so you can talk while you build.
-  const [view, setView] = useState<'voice' | 'studio' | 'config'>('voice')
+  const [view, setView] = useState<'voice' | 'studio' | 'models' | 'config'>('voice')
   const [accent, setAccent] = useState(() => localStorage.getItem('jimsky.accent') ?? 'teal')
   const [chatOpen, setChatOpen] = useState(false)
 
@@ -389,6 +390,9 @@ export default function App() {
         </button>
         <button className={view === 'studio' ? 'on' : ''} onClick={() => setView('studio')}>
           STUDIO
+        </button>
+        <button className={view === 'models' ? 'on' : ''} onClick={() => setView('models')}>
+          MODELS
         </button>
         <button className={view === 'config' ? 'on' : ''} onClick={() => setView('config')}>
           CONFIG
@@ -421,6 +425,7 @@ export default function App() {
       )}
 
       {view === 'studio' && <div className="view"><Studio /></div>}
+      {view === 'models' && <div className="view"><Models /></div>}
       {view === 'config' && <div className="view"><Config accent={accent} onAccent={setAccent} /></div>}
       {view === 'voice' && !session && <div className="view"><ConnectScreen onConnect={connect} error={error} /></div>}
       <FloatingChat open={chatOpen} onToggle={() => setChatOpen((v) => !v)} />

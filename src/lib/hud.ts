@@ -190,3 +190,59 @@ export const runWorkflow = (id: string, subject?: string, n = 1) =>
 
 export const askAgent = (prompt: string) =>
   call<{ job: HudJob }>('/api/agent', { method: 'POST', body: JSON.stringify({ prompt }) })
+
+// ---- model router -----------------------------------------------------------
+// The router picks which brain answers. Cost is only reported when a price is
+// published, and price_source says where it came from.
+export interface RouterModel {
+  id: string
+  provider: string
+  label: string
+  tier: 'frontier' | 'fast' | 'open' | 'free'
+  role: string
+  note: string
+  key_present?: boolean
+  price_per_mtok_in?: number | null
+  price_per_mtok_out?: number | null
+  price_source: string
+  context?: number | null
+}
+
+export interface RouterResult {
+  id: string
+  provider: string
+  label: string
+  ok: boolean
+  text: string
+  latency_ms: number | null
+  tokens_in: number | null
+  tokens_out: number | null
+  cost_usd: number | null
+  price_source: string
+  error: string | null
+  finish_reason?: string
+  truncated?: boolean
+  from_reasoning?: boolean
+}
+
+export const fetchRouterModels = () =>
+  call<{
+    ok: boolean
+    models: RouterModel[]
+    free: RouterModel[]
+    self_hosted: { id: string; label: string; url: string; status: string; note: string }[]
+    counts: { cloud: number; free: number; self_hosted: number }
+  }>('/api/router/models')
+
+export const routerCompare = (prompt: string, models: string[], max_tokens = 900) =>
+  call<{
+    ok: boolean
+    prompt: string
+    results: RouterResult[]
+    wall_ms: number
+    total_cost_usd: number
+    cost_known: boolean
+  }>('/api/router/compare', {
+    method: 'POST',
+    body: JSON.stringify({ prompt, models, max_tokens }),
+  })
