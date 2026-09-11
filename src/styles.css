@@ -228,3 +228,37 @@ h1,h2,h3{margin:0;letter-spacing:.14em}
 .preview img{cursor:default}
 .preview-hint{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
   color:var(--dimmer);letter-spacing:.18em}
+
+.tierbtn{border:1px solid var(--line-hot);background:#0b0e15;color:var(--dimmer);padding:5px 8px;
+  font:9px/1 var(--mono);letter-spacing:.16em;cursor:pointer;margin-left:8px}
+.tierbtn.on{border-color:var(--accent);color:var(--accent)}
+.newdot{width:5px;height:5px;border-radius:50%;background:var(--accent);flex:0 0 auto}
+.wf{border:1px solid var(--line);padding:8px 10px;margin-bottom:7px}
+.wfline{display:flex;align-items:baseline;gap:8px;font-size:11px}
+.wfline b{color:var(--ink)}
+.wfm{margin-left:auto;color:var(--accent);font-size:9.5px}
+.wfnote{color:var(--dimmer);font-size:10px;margin-top:4px;line-height:1.5}
+.wfrow{display:flex;gap:6px;margin-top:7px}
+.wfrow input{flex:1;background:#090c12;border:1px solid var(--line);color:var(--ink);
+  padding:6px 8px;font:10.5px var(--mono);min-width:0}
+.mod{border-left:2px solid var(--line-hot);padding:7px 10px;margin-bottom:8px}
+.mod.built-in{border-left-color:var(--live)}
+.mod.needs-key{border-left-color:var(--warn)}
+.mod.planned{border-left-color:var(--dimmer)}
+.modline{display:flex;align-items:center;gap:7px;font-size:11px}
+.modstatus{margin-left:auto;color:var(--dimmer);font-size:9px;letter-spacing:.12em}
+.modwhat{color:var(--dimmer);font-size:10px;margin-top:4px;line-height:1.5}
+.modneed{color:var(--warn);font-size:10px;margin-top:4px}
+.modrun{display:block;margin-top:5px;color:var(--accent);font-size:9.5px;word-break:break-all}
+.modok{color:var(--live);font-size:9.5px;margin-top:4px}
+
+/* z-index layering: panel heads and their floating labels were sitting above the inputs on narrow
+   layouts, so a tap could land on a label instead of the field. Keep content above chrome. */
+.panel{position:relative}
+.panel-head{position:relative;z-index:1}
+.browsebox{position:relative;z-index:3}
+.wfrow{position:relative;z-index:3}
+.row{position:relative;z-index:2}
+.compose .scroller textarea{position:relative;z-index:2}
+.panel .tiny{position:relative;z-index:1}
+.pickgroup{position:relative;z-index:1}

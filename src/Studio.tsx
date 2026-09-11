@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  askAgent, browseUrl, createJobs, fetchCatalog, fetchJobs, getKey, redeemCode, setKey,
-  type Catalog, type HudJob, type HudModel,
+  askAgent, browseUrl, createJobs, deleteWorkflow, fetchCatalog, fetchJobs, fetchMods,
+  fetchWorkflows, getKey, redeemCode, runWorkflow, saveWorkflow, setKey,
+  type Catalog, type HudJob, type HudModel, type HudMod, type HudWorkflow,
 } from './lib/hud'
 
 /**
@@ -31,24 +32,32 @@ function KeyGate({ onSaved }: { onSaved: () => void }) {
   )
 }
 
-function ModelPicker({ models, value, onChange, onTemplate }: {
+function ModelPicker({ models, value, onChange, onTemplate, newOnly, onNewOnly }: {
   models: HudModel[]
   value: string
   onChange: (alias: string) => void
   onTemplate: (category: string) => void
+  newOnly: boolean
+  onNewOnly: (v: boolean) => void
 }) {
   const [q, setQ] = useState('')
   const groups = useMemo(() => {
     const by: Record<string, HudModel[]> = {}
     for (const m of models) {
+      if (newOnly && m.tier === 'legacy') continue
       if (q && !`${m.alias} ${m.partner} ${m.category}`.toLowerCase().includes(q.toLowerCase())) continue
       ;(by[m.category] ||= []).push(m)
     }
     return by
-  }, [models, q])
+  }, [models, q, newOnly])
   return (
     <section className="panel">
       <div className="panel-head"><span className="tag">MODEL</span>
+        <button className={`tierbtn ${newOnly ? 'on' : ''}`}
+                onClick={() => onNewOnly(!newOnly)}
+                title="hide the older flux-1.x era models">
+          NEW STACK
+        </button>
         <input className="mini-input" placeholder="filter" value={q}
                onChange={(e) => setQ(e.target.value)} />
       </div>
@@ -61,6 +70,7 @@ function ModelPicker({ models, value, onChange, onTemplate }: {
             {list.map((m) => (
               <button key={m.alias} className={`chipmodel ${value === m.alias ? 'on' : ''}`}
                       onClick={() => onChange(m.alias)} title={m.summary}>
+                {m.tier === 'new' ? <span className="newdot" title="newest generation" /> : null}
                 <span className="alias">{m.alias}</span>
                 <span className="partner">{m.partner}</span>
                 <span className="cost">{m.price}c</span>
@@ -115,12 +125,21 @@ export default function Studio() {
   const [note, setNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
+  const [mods, setMods] = useState<HudMod[]>([])
+  const [workflows, setWorkflows] = useState<HudWorkflow[]>([])
+  const [newOnly, setNewOnly] = useState(true)
+  const [wfName, setWfName] = useState('')
+  const [wfSubject, setWfSubject] = useState('')
 
   const refresh = useCallback(async () => {
     try {
-      const [c, j] = await Promise.all([fetchCatalog(), fetchJobs()])
+      const [c, j, m, w] = await Promise.all([
+        fetchCatalog(), fetchJobs(), fetchMods(), fetchWorkflows(),
+      ])
       setCat(c)
       setJobs(j.jobs)
+      setMods(m.mods)
+      setWorkflows(w.workflows)
       setError(null)
     } catch (e) {
       setError((e as Error).message)
@@ -178,6 +197,8 @@ export default function Studio() {
         <ModelPicker
           models={cat?.models ?? []}
           value={model}
+          newOnly={newOnly}
+          onNewOnly={setNewOnly}
           onChange={setModel}
           onTemplate={(c) => {
             const t = cat?.templates.find((x) => x.category === c)
@@ -218,6 +239,18 @@ export default function Studio() {
               <button className="cta grow" disabled={busy || !prompt.trim()} onClick={submit}>
                 {busy ? 'WORKING…' : `CREATE${batch > 1 ? ` ×${batch}` : ''}`}
               </button>
+            </div>
+            <div className="row">
+              <input className="mini-input grow" placeholder="save this setup as a workflow named…"
+                     value={wfName} onChange={(e) => setWfName(e.target.value)} />
+              <button className="mini" disabled={!wfName.trim() || !prompt.trim()}
+                      onClick={async () => {
+                        try {
+                          await saveWorkflow({ name: wfName.trim(), model, prompt })
+                          setNote(`saved workflow: ${wfName.trim()}`); setWfName('')
+                          await refresh()
+                        } catch (e) { setError((e as Error).message) }
+                      }}>SAVE</button>
             </div>
             {note && <p className="ok">{note}</p>}
             {error && <p className="err">⚠ {error}</p>}
@@ -272,6 +305,61 @@ export default function Studio() {
             </div>
             <p className="tiny">Anything the MCP only reaches — the gpt-image flare node, saved
               workflows, batch submits. Runs as a real Hermes turn.</p>
+          </section>
+
+          <section className="panel">
+            <div className="panel-head"><span className="tag">WORKFLOWS</span>
+              <span className="muted">run a recipe</span>
+            </div>
+            <div className="scroller">
+              {workflows.map((w) => (
+                <div key={w.id} className="wf">
+                  <div className="wfline">
+                    <b>{w.name}</b>
+                    <span className="wfm">{w.model}</span>
+                  </div>
+                  {w.notes && <div className="wfnote">{w.notes}</div>}
+                  <div className="wfrow">
+                    <input placeholder="subject (optional)" value={wfSubject}
+                           onChange={(e) => setWfSubject(e.target.value)} />
+                    <button className="mini" onClick={async () => {
+                      try {
+                        const r = await runWorkflow(w.id, wfSubject, 1)
+                        setNote(`running ${w.name} · ${r.credits} credits left`)
+                        await refresh()
+                      } catch (e) { setError((e as Error).message) }
+                    }}>RUN</button>
+                    {!w.builtin && (
+                      <button className="mini danger" onClick={async () => {
+                        await deleteWorkflow(w.id); await refresh()
+                      }}>×</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="panel">
+            <div className="panel-head"><span className="tag">MODS</span>
+              <span className="muted">{mods.filter((m) => m.status === 'built-in').length} built in</span>
+            </div>
+            <div className="scroller">
+              {mods.map((m) => (
+                <div key={m.id} className={`mod ${m.status}`}>
+                  <div className="modline">
+                    <span className={`dot ${m.status === 'ready' || m.status === 'built-in' ? 'done'
+                      : m.status === 'needs-key' ? 'running' : 'idle'}`} />
+                    <b>{m.name}</b>
+                    <span className="modstatus">{m.status}</span>
+                  </div>
+                  <div className="modwhat">{m.what}</div>
+                  {m.missing?.length ? <div className="modneed">needs {m.missing.join(', ')}</div> : null}
+                  {m.run ? <code className="modrun">{m.run}</code> : null}
+                  {m.verified ? <div className="modok">✓ {m.verified}</div> : null}
+                </div>
+              ))}
+            </div>
           </section>
 
           <Jobs jobs={jobs} onPick={setPreview} />

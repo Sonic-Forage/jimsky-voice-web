@@ -9,6 +9,7 @@ export interface HudModel {
   mode: string
   summary: string
   price: number
+  tier?: 'new' | 'current' | 'legacy'
 }
 
 export interface HudTemplate {
@@ -88,5 +89,46 @@ export const redeemCode = (code: string) =>
   call<{ balance: number; added: number }>('/api/credits/redeem', {
     method: 'POST', body: JSON.stringify({ code }),
   })
+export interface HudMod {
+  id: string
+  name: string
+  status: string
+  what: string
+  requires?: string[]
+  missing?: string[]
+  run?: string
+  path?: string
+  persona?: string
+  overlays?: string
+  docs?: string
+  source?: string
+  verified?: string
+  console?: string
+}
+
+export interface HudWorkflow {
+  id: string
+  name: string
+  model: string
+  prompt: string
+  notes?: string
+  builtin?: boolean
+}
+
+export const fetchMods = () => call<{ mods: HudMod[] }>('/api/mods')
+export const fetchWorkflows = () => call<{ workflows: HudWorkflow[] }>('/api/workflows')
+export const saveWorkflow = (workflow: Partial<HudWorkflow>) =>
+  call<{ workflow: HudWorkflow; workflows: HudWorkflow[] }>('/api/workflows', {
+    method: 'POST', body: JSON.stringify({ workflow }),
+  })
+export const deleteWorkflow = (id: string) =>
+  call<{ workflows: HudWorkflow[] }>('/api/workflows/delete', {
+    method: 'POST', body: JSON.stringify({ id }),
+  })
+export const runWorkflow = (id: string, subject?: string, n = 1) =>
+  call<{ jobs: HudJob[]; credits: number }>('/api/workflows/run', {
+    method: 'POST', body: JSON.stringify({ id, subject, n }),
+  })
+
 export const askAgent = (prompt: string) =>
   call<{ job: HudJob }>('/api/agent', { method: 'POST', body: JSON.stringify({ prompt }) })
