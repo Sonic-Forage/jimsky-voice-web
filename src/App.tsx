@@ -14,6 +14,7 @@ import { ConnectionState, type Room } from 'livekit-client'
 import type { TrackReference } from '@livekit/components-react'
 import {
   MEDIA_TOPIC, TEXT_TOPIC, fetchPublishedMedia, fetchSession,
+  getAccessCode, hasAccessCode, setAccessCode,
   type MediaItem, type SessionConfig,
 } from './lib/config'
 import Studio from './Studio'
@@ -52,9 +53,13 @@ function b64ToUrl(mime: string, data: string) {
 
 function ConnectScreen({ onConnect, error }: { onConnect: (room: string) => void; error: string | null }) {
   const [room, setRoom] = useState('vex-voice')
+  const [code, setCode] = useState(getAccessCode())
   const [busy, setBusy] = useState(false)
   const go = async () => {
     setBusy(true)
+    // The token endpoint demands this and refuses to mint without it, so write it before
+    // we ask. Kept in this browser only - it never leaves except on the token request.
+    setAccessCode(code)
     await onConnect(room)
     setBusy(false)
   }
@@ -71,6 +76,17 @@ function ConnectScreen({ onConnect, error }: { onConnect: (room: string) => void
           your tools — and what it builds lands on the stage in front of you.
         </p>
         <div className="gate-row">
+          <label htmlFor="code">ACCESS</label>
+          <input id="code" value={code} type="password" onChange={(e) => setCode(e.target.value)}
+                 spellCheck={false} autoComplete="off" placeholder="room access code" />
+        </div>
+        {!code && !hasAccessCode() && (
+          <p className="tiny" style={{ color: 'var(--warn)' }}>
+            The room requires an access code. Without it the server will refuse to mint a token —
+            it no longer lets anonymous visitors join.
+          </p>
+        )}
+        <div className="gate-row">
           <label htmlFor="room">ROOM</label>
           <input id="room" value={room} onChange={(e) => setRoom(e.target.value)}
                  spellCheck={false} autoComplete="off" />
@@ -80,8 +96,8 @@ function ConnectScreen({ onConnect, error }: { onConnect: (room: string) => void
         </div>
         {error && <p className="err">⚠ {error}</p>}
         <p className="tiny">
-          Mic access is requested on connect. Audio never leaves the room; tokens are minted server-side
-          and scoped to one room for two hours.
+          Mic access is requested on connect. Audio never leaves the room; tokens are minted server-side,
+          scoped to one room, good for one hour, and only issued to a caller presenting the access code.
         </p>
       </div>
     </div>

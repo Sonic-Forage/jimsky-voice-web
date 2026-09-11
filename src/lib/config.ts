@@ -20,8 +20,16 @@ export const MEDIA_BASE =
   || 'https://jimsky-media.15-204-82-198.nip.io'
 
 export async function fetchSession(room?: string): Promise<SessionConfig> {
-  const qs = room ? `?room=${encodeURIComponent(room)}` : ''
-  const res = await fetch(`/api/token${qs}`, { headers: { accept: 'application/json' } })
+  const params = new URLSearchParams()
+  if (room) params.set('room', room)
+  const qs = params.toString() ? `?${params}` : ''
+  const code = getAccessCode()
+  const res = await fetch(`/api/token${qs}`, {
+    headers: {
+      accept: 'application/json',
+      ...(code ? { 'x-jimsky-code': code } : {}),
+    },
+  })
   const body = await res.json().catch(() => ({}))
   if (!res.ok) {
     const detail = (body as { detail?: string; error?: string }).detail
@@ -30,6 +38,25 @@ export async function fetchSession(room?: string): Promise<SessionConfig> {
   }
   return body as SessionConfig
 }
+
+// ---- room access code --------------------------------------------------------
+// Minting a token used to require nothing, so any visitor to this public site could join
+// the room with a live microphone. The server now demands a shared code and fails closed
+// without it. It is kept in this browser only and sent on the token request.
+const CODE_STORE = 'jimsky.access.code'
+
+export function getAccessCode(): string {
+  return localStorage.getItem(CODE_STORE) ?? ''
+}
+
+export function setAccessCode(value: string): void {
+  localStorage.setItem(CODE_STORE, value.trim())
+}
+
+export function hasAccessCode(): boolean {
+  return getAccessCode().length > 0
+}
+
 
 // One item on the stage. Arrives either as base64 over the data channel (`data`) or as a
 // file the agent published (`url`).
