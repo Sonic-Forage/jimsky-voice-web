@@ -65,9 +65,22 @@ export const handler: Handler = async (event) => {
   // agent into the room. Disable with LIVEKIT_AGENT_NAME="-" for automatic dispatch.
   const agent = (process.env.LIVEKIT_AGENT_NAME ?? 'vex').trim()
   if (agent && agent !== '-') {
-    at.roomConfig = new RoomConfiguration({ agents: [{ agentName: agent }] })
+    // emptyTimeout keeps a room from lingering after everyone leaves. That matters for agent
+    // dispatch: a fresh room triggers a room-level job the worker definitely accepts, while a
+    // long-lived empty room can leave a just-restarted worker unable to take the job
+    // ("no worker is available"). 5 minutes is plenty for a voice session to start.
+    at.roomConfig = new RoomConfiguration({
+      agents: [{ agentName: agent }],
+      emptyTimeout: 300,
+    })
   }
 
   const token = await at.toJwt()
-  return json(200, { url, token, room: wanted, identity, agent: agent === '-' ? null : agent })
+  // `url`/`token` are what our web front end reads; `serverUrl`/`participantToken` are the
+  // shape LiveKit's own TokenSource.endpoint() expects, so the mobile app can use this exact
+  // same endpoint instead of hardcoding a second token path.
+  return json(200, {
+    url, token, room: wanted, identity, agent: agent === '-' ? null : agent,
+    serverUrl: url, participantToken: token,
+  })
 }
