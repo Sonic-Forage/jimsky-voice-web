@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  askAgent, browseUrl, createJobs, deleteWorkflow, fetchCatalog, fetchJobs, fetchMods,
-  fetchWorkflows, getKey, redeemCode, runWorkflow, saveWorkflow, setKey,
-  type Catalog, type HudJob, type HudModel, type HudMod, type HudWorkflow,
+  askAgent, browseUrl, clearChat, createJobs, deleteWorkflow, fetchCatalog, fetchChat,
+  fetchJobs, fetchMods, fetchWorkflows, getKey, redeemCode, runWorkflow, saveWorkflow, sendChat,
+  setKey, type Catalog, type ChatMessage, type HudJob, type HudModel, type HudMod, type HudWorkflow,
 } from './lib/hud'
+import { MEDIA_BASE } from './lib/config'
 
 /**
  * The studio half of the HUD: pick a model, pick a template, make something. Deliberately usable
@@ -83,6 +84,59 @@ function ModelPicker({ models, value, onChange, onTemplate, newOnly, onNewOnly }
   )
 }
 
+function Chat({ messages, session, onSend, onClear, busy, watching }: {
+  messages: ChatMessage[]
+  session: string
+  onSend: (text: string) => void
+  onClear: () => void
+  busy: boolean
+  watching: string | null
+}) {
+  const [draft, setDraft] = useState('')
+  const boxRef = useRef<HTMLDivElement>(null)
+  useEffect(() => { boxRef.current?.scrollTo({ top: 1e9 }) }, [messages.length])
+  const submit = () => {
+    const v = draft.trim()
+    if (!v) return
+    setDraft('')
+    onSend(v)
+  }
+  return (
+    <section className="panel chatpanel">
+      <div className="panel-head">
+        <span className="tag">AGENT</span>
+        <span className="muted">{session}</span>
+        {busy && <span className="chip thinking-chip">WORKING…</span>}
+        <button className="mini" onClick={onClear}>CLEAR</button>
+      </div>
+      <div className="chattranscript" ref={boxRef}>
+        {messages.length === 0 && (
+          <p className="muted">
+            Talk to the full agent — every tool it has, no voice needed. Ask it to make something and
+            watch the stage fill up.
+          </p>
+        )}
+        {messages.map((m, i) => (
+          <div key={i} className={`chatline ${m.role}${m.error ? ' bad' : ''}`}>
+            <span className="who">{m.role === 'user' ? 'you' : 'hermes'}</span>
+            <span className="chattext">{m.text}</span>
+            {m.seconds ? <span className="chatmeta">{m.seconds}s</span> : null}
+          </div>
+        ))}
+      </div>
+      {watching && <div className="watching">◉ new on stage: {watching.slice(0, 70)}</div>}
+      <div className="chatbox">
+        <textarea rows={2} value={draft} placeholder="ask for anything — type, don't talk"
+                  onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() }
+                  }} />
+        <button className="cta" disabled={busy || !draft.trim()} onClick={submit}>SEND</button>
+      </div>
+    </section>
+  )
+}
+
 function Jobs({ jobs, onPick }: { jobs: HudJob[]; onPick: (url: string) => void }) {
   return (
     <section className="panel">
@@ -130,12 +184,19 @@ export default function Studio() {
   const [newOnly, setNewOnly] = useState(true)
   const [wfName, setWfName] = useState('')
   const [wfSubject, setWfSubject] = useState('')
+  const [chat, setChat] = useState<ChatMessage[]>([])
+  const [chatSession, setChatSession] = useState('jimsky-hud')
+  const [chatBusy, setChatBusy] = useState(false)
+  const [watching, setWatching] = useState<string | null>(null)
+  const lastMedia = useRef<number>(0)
 
   const refresh = useCallback(async () => {
     try {
-      const [c, j, m, w] = await Promise.all([
-        fetchCatalog(), fetchJobs(), fetchMods(), fetchWorkflows(),
+      const [c, j, m, w, ch] = await Promise.all([
+        fetchCatalog(), fetchJobs(), fetchMods(), fetchWorkflows(), fetchChat(),
       ])
+      setChat(ch.messages)
+      setChatSession(ch.session)
       setCat(c)
       setJobs(j.jobs)
       setMods(m.mods)
@@ -160,6 +221,29 @@ export default function Studio() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
+
+  // "Watch it generate": while a chat turn is running, notice new items landing on the stage.
+  useEffect(() => {
+    if (!chatBusy) return
+    let stop = false
+    const tick = async () => {
+      try {
+        const res = await fetch(`${MEDIA_BASE}/index.json`, { cache: 'no-store' })
+        if (!res.ok || stop) return
+        const body = await res.json()
+        const n = (body.items ?? []).length
+        if (lastMedia.current && n > lastMedia.current) {
+          const top = body.items[0]
+          setWatching(`${top.caption ?? top.file}`)
+          setPreview(`${MEDIA_BASE}/${encodeURIComponent(top.file)}`)
+        }
+        lastMedia.current = n
+      } catch { /* fine */ }
+    }
+    void tick()
+    const t = setInterval(tick, 4000)
+    return () => { stop = true; clearInterval(t) }
+  }, [chatBusy])
 
   const isEdit = model.includes('kontext') || model.includes('edit') || model.includes('reframe')
     || model.includes('remix') || model.includes('i2i') || model.includes('fill')
@@ -194,6 +278,34 @@ export default function Studio() {
         </div>
       )}
       <div className="studio-grid">
+        <div className="chatwrap">
+          <Chat
+            messages={chat}
+            session={chatSession}
+            busy={chatBusy}
+            watching={watching}
+            onClear={async () => { await clearChat(); setChat([]); setWatching(null) }}
+            onSend={async (text) => {
+              setChat((prev) => [...prev, { role: 'user', text, at: Date.now() }])
+              setChatBusy(true)
+              setWatching(null)
+              try { await sendChat(text) } catch (e) { setError((e as Error).message) }
+              // poll until the assistant entry appears
+              const started = Date.now()
+              while (Date.now() - started < 900000) {
+                await new Promise((r) => setTimeout(r, 4000))
+                try {
+                  const r = await fetchChat()
+                  setChat(r.messages)
+                  const last = r.messages[r.messages.length - 1]
+                  if (last && last.role === 'assistant') break
+                } catch { /* keep waiting */ }
+              }
+              setChatBusy(false)
+              await refresh()
+            }}
+          />
+        </div>
         <ModelPicker
           models={cat?.models ?? []}
           value={model}

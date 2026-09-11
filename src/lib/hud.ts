@@ -115,6 +115,21 @@ export interface HudWorkflow {
   builtin?: boolean
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  text: string
+  at: number
+  seconds?: number
+  error?: boolean
+}
+
+export const fetchChat = () =>
+  call<{ messages: ChatMessage[]; session: string }>('/api/chat')
+export const sendChat = (message: string) =>
+  call<{ job: HudJob }>('/api/chat', { method: 'POST', body: JSON.stringify({ message }) })
+export const clearChat = () =>
+  call<{ messages: ChatMessage[] }>('/api/chat/clear', { method: 'POST', body: '{}' })
+
 export const fetchMods = () => call<{ mods: HudMod[] }>('/api/mods')
 export const fetchWorkflows = () => call<{ workflows: HudWorkflow[] }>('/api/workflows')
 export const saveWorkflow = (workflow: Partial<HudWorkflow>) =>
