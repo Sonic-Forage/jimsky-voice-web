@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Orb from './Orb'
 import {
   deleteWorkflow, fetchComfyPresets, fetchMods, fetchSettings, fetchTemplateJson,
-  fetchTemplates, fetchWorkflows, saveSettings, testComfy,
+  fetchTemplates, fetchWorkflows, runTemplate, saveSettings, testComfy,
   type ComfyPreset, type ComfyProbe, type HudMod, type HudSettings, type HudTemplate,
   type HudWorkflow,
 } from './lib/hud'
@@ -172,6 +172,12 @@ export default function Config({ accent, onAccent }: { accent: string; onAccent:
                       setJson({ name: t.name, text: JSON.stringify(r.workflow, null, 1).slice(0, 6000) })
                     } catch (e) { setNote((e as Error).message) }
                   }}>VIEW JSON</button>
+                  <button className="mini run-tpl" onClick={async () => {
+                    try {
+                      const r = await runTemplate(t.name)
+                      setNote(`running ${t.name} on ${r.endpoint} — watch the stage`)
+                    } catch (e) { setNote((e as Error).message) }
+                  }}>RUN ON ENDPOINT</button>
                   {t.tutorial && (
                     <a className="mini linky" href={t.tutorial} target="_blank" rel="noreferrer">TUTORIAL</a>
                   )}

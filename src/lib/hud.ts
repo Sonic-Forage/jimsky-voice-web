@@ -165,6 +165,11 @@ export const testComfy = (url: string) =>
 export const fetchTemplates = (q = '', limit = 300) =>
   call<{ templates: HudTemplate[]; count: number; categories: string[]; shown: number }>(
     `/api/templates?q=${encodeURIComponent(q)}&limit=${limit}`)
+export const runTemplate = (template: string) =>
+  call<{ job: HudJob; endpoint: string }>('/api/comfy/run', {
+    method: 'POST', body: JSON.stringify({ template }),
+  })
+
 export const fetchTemplateJson = (name: string) =>
   call<{ name: string; workflow: unknown }>(`/api/templates/json?name=${encodeURIComponent(name)}`)
 
