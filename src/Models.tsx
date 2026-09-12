@@ -20,14 +20,19 @@ const TIERS: { key: string; label: string; blurb: string }[] = [
   { key: 'free', label: 'FREE TIER', blurb: 'listed at $0 per token. for testing without spending anything.' },
 ]
 
-const CAPABILITIES = [
-  { k: 'VOICE ROOM', v: 'talk to the agent over our own LiveKit server; it answers in full duplex', on: true },
-  { k: 'BROWSER', v: 'drives a real Chromium — loads pages, reads them, screenshots them', on: true },
-  { k: 'MACHINE', v: 'shell, files, services, git, cron on the VPS it lives on', on: true },
-  { k: 'MAKE', v: 'image + video generation, 629 official Comfy templates, batch runs', on: true },
-  { k: 'PUBLISH', v: 'writes finished work to the stage, where this front end picks it up', on: true },
-  { k: 'DELEGATE', v: 'spawns sub-agents and background jobs for parallel work', on: true },
-  { k: 'DESKTOP', v: 'drives a real desktop when a job needs a GUI', on: false },
+// The ACTUAL tools wired into the voice agent (from apps/voice/vex-agent/agent.py, ALL_TOOLS).
+// This used to be an aspirational list; these are the ten that exist in the code.
+const AGENT_TOOLS = [
+  { k: 'IMG', n: 'make_an_image', v: 'describe a picture out loud and it renders, then lands on the stage' },
+  { k: 'VOICE', n: 'switch_voice', v: 'change its own voice mid-conversation (cascade engine only)' },
+  { k: 'WEB', n: 'browse_the_web', v: 'opens a real Chromium on a page and screenshots it to the stage' },
+  { k: 'BOX', n: 'run_on_my_machine', v: 'drives the full agent: shell, files, services, generation' },
+  { k: 'STUDIO', n: 'query_studio_projects', v: 'reads the studio\u2019s live project list' },
+  { k: 'CAST', n: 'query_studio_characters', v: 'reads the character universe roster' },
+  { k: 'STATS', n: 'query_studio_info', v: 'studio stats and figures' },
+  { k: 'POD', n: 'gpu_pod_status', v: 'is the GPU box up, and what is it costing' },
+  { k: 'POD', n: 'gpu_pod_boot', v: 'boots the ComfyUI GPU pod when heavy work is needed' },
+  { k: 'POD', n: 'gpu_pod_terminate', v: 'kills the pod so billing stops' },
 ]
 
 export default function Models() {
@@ -227,14 +232,18 @@ export default function Models() {
       <div className="rt-sec">
         <h2>ONE BRAIN, MANY HANDS</h2>
         <div className="blurb">
-          Whichever model you pick here drives the same tool set. The router changes the mind, not the reach —
-          so the agent can be cheap for bulk work and luna for the things that need judgement.
+          Whichever model answers, the agent drives the same {AGENT_TOOLS.length} tools. This list is read from
+          the agent itself — not a plan. The voice worker is stopped right now, so these are wired but not
+          listening until it is started.
         </div>
         <div className="rt-cap">
-          {CAPABILITIES.map(c => (
-            <div key={c.k} className="rt-caprow">
-              <span className="rt-capk" style={c.on ? undefined : { color: 'var(--dimmer)' }}>{c.k}</span>
-              <span className="rt-capv">{c.v}{!c.on && <em style={{ color: 'var(--warn)' }}> — not wired yet</em>}</span>
+          {AGENT_TOOLS.map(t => (
+            <div key={t.n} className="rt-caprow">
+              <span className="rt-capk">{t.k}</span>
+              <span className="rt-capv">
+                <span className="mono" style={{ color: 'var(--accent)' }}>{t.n}</span>
+                <br />{t.v}
+              </span>
             </div>
           ))}
         </div>
